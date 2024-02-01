@@ -1,5 +1,7 @@
 //> using scala "3.4.0-RC3"
 //> using test.dep org.scalameta::munit:1.0.0-M10
+//> using options -siteroot ${.}
+//> using options -project enhanced-string-interpolator
 //> using publish.organization "io.github.bishabosha"
 //> using publish.name "enhanced-string-interpolator"
 //> using publish.computeVersion "git:tag"
