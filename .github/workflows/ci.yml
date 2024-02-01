@@ -43,4 +43,4 @@ jobs:
         PUBLISH_PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
         PUBLISH_SECRET_KEY: ${{ secrets.PUBLISH_SECRET_KEY }}
         PUBLISH_SECRET_KEY_PASSWORD: ${{ secrets.PUBLISH_SECRET_KEY_PASSWORD }}
-        GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
+        PGP_PASSWORD: ${{ secrets.PGP_PASSWORD }}
