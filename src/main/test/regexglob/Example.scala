@@ -9,3 +9,4 @@ class ExampleSuite extends munit.FunSuite:
       case r"[${r"$xs%d"}...(, )]" => xs.sum
 
     assertEquals(res, 150)
+end ExampleSuite
