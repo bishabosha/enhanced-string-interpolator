@@ -40,7 +40,6 @@ jobs:
       run: scala-cli publish . --cross
       env:
         PUBLISH_USER: ${{ secrets.PUBLISH_USER }}
-        PUBLISH_PUBLIC_KEY: ${{ secrets.PUBLISH_PUBLIC_KEY }}
         PUBLISH_PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
+        PUBLISH_PUBLIC_KEY: ${{ secrets.PUBLISH_PUBLIC_KEY }}
         PUBLISH_SECRET_KEY: ${{ secrets.PUBLISH_SECRET_KEY }}
-        PGP_PASSWORD: ${{ secrets.PGP_PASSWORD }}
