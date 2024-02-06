@@ -1,4 +1,4 @@
-package regexglob
+package stringmatching.regex
 
 import quoted.*
 import scala.annotation.compileTimeOnly
@@ -8,7 +8,7 @@ import scala.util.boundary, boundary.break
 import scala.collection.immutable.ArraySeq
 import scala.annotation.tailrec
 
-object RegexGlobbing:
+object Interpolators:
   extension (inline sc: StringContext)
     /** use in patterns like `case r"$foo...(, )" =>` */
     @compileTimeOnly("should be used with `r` pattern interpolator")
@@ -338,4 +338,4 @@ object RegexGlobbing:
         }
     end match
   end rsUnapplyExpr
-end RegexGlobbing
+end Interpolators

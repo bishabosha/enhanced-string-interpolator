@@ -6,7 +6,7 @@ read more [in the blog](https://bishabosha.github.io/articles/simple-parsing-wit
 ## Basic usage
 
 ```scala
-import regexglob.RegexGlobbing.r
+import stringmatching.regex.Interpolators.r
 
 "[23, 56, 71]" match
   case r"[${r"$xs%d"}...(, )]" => xs.sum // 150
