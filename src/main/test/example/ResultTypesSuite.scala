@@ -1,6 +1,6 @@
-package regexglob
+package example
 
-import RegexGlobbing.r
+import stringmatching.regex.Interpolators.r
 
 class ResultTypesSuite extends munit.FunSuite:
 
