@@ -6,9 +6,10 @@ import collection.immutable
 import collection.mutable
 import scala.util.boundary, boundary.break
 import scala.collection.immutable.ArraySeq
+import scala.annotation.tailrec
 
 object RegexGlobbing:
-  extension (inline sc: scala.StringContext)
+  extension (inline sc: StringContext)
     /** use in patterns like `case r"$foo...(, )" =>` */
     @compileTimeOnly("should be used with `r` pattern interpolator")
     transparent inline def r: RSStringContext[Any] = ${ rsApplyExpr('sc) }
@@ -166,41 +167,67 @@ object RegexGlobbing:
   end Pattern
 
   def parsed(scExpr: Expr[StringContext])(using Quotes): Pattern =
+    import quotes.reflect.*
     val sc: StringContext = scExpr.valueOrAbort
-    val parts             = sc.parts.map(scala.StringContext.processEscapes)
+    val parts             = sc.parts
     val g +: rest         = parts: @unchecked
     g match
-      case s"...($regex)$rest0" =>
-        quotes.reflect.report.errorAndAbort(s"split is not allowed without preceding splice: $g")
-      case s"..!($regex)$rest0" =>
-        quotes.reflect.report.errorAndAbort(s"split is not allowed without preceding splice: $g")
+      case s"...($rest0" =>
+        val _ = parseRegex(g, rest0) // check for unbalanced parentheses
+        report.errorAndAbort(s"split is not allowed without preceding splice: $g")
+      case s"..!($rest0" =>
+        val _ = parseRegex(g, rest0) // check for unbalanced parentheses
+        report.errorAndAbort(s"split is not allowed without preceding splice: $g")
       case s"%$format" =>
-        quotes.reflect.report.errorAndAbort(
+        report.errorAndAbort(
           s"format `%$format` is not allowed without preceding splice: $g"
         )
       case _ =>
     end match
 
+    def globPattern(rest: String): String =
+      StringContext.processEscapes(rest)
+
+    def parseRegex(elem: String, s: String): (String, String) =
+      @tailrec
+      def loop(i: Int, levels: Int): (String, String) =
+        if i == s.length then
+          report.errorAndAbort(
+            s"unbalanced parentheses when parsing regex from format string: $"$elem$""
+          )
+        else
+          val c = s(i)
+          if c == '(' then loop(i + 1, levels + 1)
+          else if c == ')' then
+            if levels == 1 then (s.take(i), s.drop(i + 1))
+            else loop(i + 1, levels - 1)
+          else loop(i + 1, levels)
+          end if
+      loop(0, levels = 1)
+    end parseRegex
+
     val rest0 = rest.map:
-      case s"...($regex)$rest" =>
+      case elem @ s"...($rest1" =>
+        val (regex, rest) = parseRegex(elem, rest1)
         if rest.indexOf("...") > 0 || rest.indexOf("..!") > 0 then
-          quotes.reflect.report.errorAndAbort(
+          report.errorAndAbort(
             s"split is not allowed without preceding splice: $rest"
           )
-        PatternElement.Split(regex, rest)
-      case s"..!($regex)$rest" =>
+        PatternElement.Split(regex, globPattern(rest))
+      case elem @ s"..!($rest1" =>
+        val (regex, rest) = parseRegex(elem, rest1)
         if rest.indexOf("...") > 0 || rest.indexOf("..!") > 0 then
-          quotes.reflect.report.errorAndAbort(
+          report.errorAndAbort(
             s"split is not allowed without preceding splice: $rest"
           )
-        PatternElement.SplitEmpty(regex, rest)
+        PatternElement.SplitEmpty(regex, globPattern(rest))
       case s"...$rest" =>
-        quotes.reflect.report.errorAndAbort(
-          s"split `$$foo...` is not allowed without qualifying regex e.g. `$$foo...(: )`: $rest"
+        report.errorAndAbort(
+          s"split `$$foo...` is not allowed without qualifying regex e.g. `$$foo...(,)`: $rest"
         )
       case s"..!$rest" =>
-        quotes.reflect.report.errorAndAbort(
-          s"split `$$foo..!` is not allowed without qualifying regex e.g. `$$foo..!(: )`: $rest"
+        report.errorAndAbort(
+          s"split `$$foo..!` is not allowed without qualifying regex e.g. `$$foo..!(,)`: $rest"
         )
       case s"%$format" =>
         format.headOption match
@@ -208,10 +235,10 @@ object RegexGlobbing:
           case Some('L') => PatternElement.Format(FormatPattern.AsLong, format.tail)
           case Some('f') => PatternElement.Format(FormatPattern.AsFloat, format.tail)
           case Some('g') => PatternElement.Format(FormatPattern.AsDouble, format.tail)
-          case _         => quotes.reflect.report.errorAndAbort(s"unsupported format: `%$format`")
+          case _         => report.errorAndAbort(s"unsupported format: `%$format`")
       case rest =>
-        PatternElement.Glob(rest)
-    Pattern(PatternElement.Glob(g) +: rest0)
+        PatternElement.Glob(globPattern(rest))
+    Pattern(PatternElement.Glob(globPattern(g)) +: rest0)
   end parsed
 
   def refineResult(pattern: Pattern)(using Quotes): quotes.reflect.TypeRepr =
