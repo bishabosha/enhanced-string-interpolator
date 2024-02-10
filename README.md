@@ -1,4 +1,7 @@
 # enhanced-string-interpolator
+![CI status](https://github.com/bishabosha/enhanced-string-interpolator/actions/workflows/ci.yml/badge.svg)
+[![javadoc](https://javadoc.io/badge2/io.github.bishabosha/enhanced-string-interpolator_3/latest_documentation.svg)](https://javadoc.io/doc/io.github.bishabosha/enhanced-string-interpolator_3)
+
 An enhanced glob interpolator for Scala with format strings
 
 read more [in the blog](https://bishabosha.github.io/articles/simple-parsing-with-strings.html)
