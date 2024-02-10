@@ -1,5 +1,6 @@
 // Main
 //> using scala "3.4.0-RC3"
+//> using options -source:future -Yexplicit-nulls
 //> using options -project enhanced-string-interpolator -siteroot ${.}
 
 //> using publish.ci.computeVersion "git:tag"

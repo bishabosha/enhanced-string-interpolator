@@ -21,7 +21,10 @@ object Interpolators:
   end PatternElement
 
   /** Holder for the pattern elements described by a string interpolated with `r`. */
-  case class Pattern(elements: Seq[PatternElement])
+  enum Pattern:
+    case Literal(glob: String)
+    case Single(glob: String, pattern: PatternElement)
+    case Multiple(glob: String, patterns: Seq[PatternElement])
 
   extension (inline sc: StringContext)
     /** use in patterns like `case r"$foo...(, )" => println(foo)` */
