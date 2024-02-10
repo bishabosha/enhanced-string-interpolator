@@ -66,7 +66,7 @@ e.g. `$foo%g`, which extracts `val foo: Double`.
 
 ### Split Pattern
 
-e.g. `$foo...(<regex>)`, which extracts `val foo: List[String]`.
+e.g. `$foo...(<regex>)`, which extracts `val foo: IndexedSeq[String]`.
 
 This is equivalent to extracting with `$foo` and then performing`foo.split(raw"<regex>").toIndexedSeq`.
 
@@ -76,7 +76,7 @@ String escape characters are also not processed within the regex.
 There is also a special case where if the first element of the sequence is expected to be empty you can drop it with the `$foo..!(<regex>)` pattern.
 
 
-Putting this all together, you could split Windows style strings with the following pattern:
+Putting this all together, you could split Windows style paths with the following pattern:
 
 ```scala sc:nocompile
 raw"C:\foo\bar\baz.pdf" match
