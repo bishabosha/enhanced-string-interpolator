@@ -4,7 +4,7 @@
 
 An enhanced glob interpolator for Scala with format strings
 
-read more [in the blog](https://bishabosha.github.io/articles/simple-parsing-with-strings.html)
+read full usage [in the documentation](https://javadoc.io/doc/io.github.bishabosha/enhanced-string-interpolator_3), or the original inspiration in my [blog post](https://bishabosha.github.io/articles/simple-parsing-with-strings.html)
 
 ## Basic usage
 
