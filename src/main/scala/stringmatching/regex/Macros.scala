@@ -20,7 +20,8 @@ object Macros:
         '{ new RSStringContext[t]($patternExpr) }
   end rsApplyExpr
 
-  /** Process a `RSStringContext` into a well-typed call to [[stringmatching.regex.Runtime.extract]]
+  /** Process a `RSStringContext` into a well-typed call to
+    * [[stringmatching.regex.Runtime.unsafeExtract]]
     */
   def rsUnapplyExpr[R: Type, Base: Type](
       rsSCExpr: Expr[RSStringContext[R]],
@@ -35,7 +36,7 @@ object Macros:
     returnType match
       case '[t] =>
         '{
-          Runtime.extract[Base, t]($patternExpr.elements, levels = $levelsExpr)($scrutinee)
+          Runtime.unsafeExtract[Base, t]($patternExpr, levels = $levelsExpr)($scrutinee)
         }
     end match
   end rsUnapplyExpr
@@ -43,8 +44,16 @@ object Macros:
   private object Reify:
 
     given PatternToExpr: ToExpr[Pattern] with
-      def apply(pattern: Pattern)(using Quotes): Expr[Pattern] =
-        '{ Pattern(${ Expr.ofSeq(pattern.elements.map(Expr(_))) }) }
+      import Pattern.*
+
+      def apply(pattern: Pattern)(using Quotes): Expr[Pattern] = pattern match
+        case Literal(glob) =>
+          '{ Literal(${ Expr(glob) }) }
+        case Single(glob, pattern) =>
+          '{ Single(${ Expr(glob) }, ${ Expr(pattern) }) }
+        case Multiple(glob, patterns) =>
+          '{ Multiple(${ Expr(glob) }, ${ Expr.ofSeq(patterns.map(Expr(_))) }) }
+    end PatternToExpr
 
     given FormatPatternToExpr: ToExpr[FormatPattern] with
       import FormatPattern.*
@@ -145,29 +154,40 @@ object Macros:
           case _         => report.errorAndAbort(s"unsupported format: `%$format`")
       case rest =>
         PatternElement.Glob(globPattern(rest))
-    Pattern(PatternElement.Glob(globPattern(g)) +: rest0)
+
+    val g0 = globPattern(g)
+
+    if rest0.isEmpty then Pattern.Literal(g0)
+    else if rest0.sizeIs == 1 then Pattern.Single(g0, rest0.head)
+    else Pattern.Multiple(g0, rest0)
   end parsed
 
   private def refineResult(pattern: Pattern)(using Quotes): quotes.reflect.TypeRepr =
     import quotes.reflect.*
-    val args = pattern.elements
-      .drop(1)
-      .map:
-        case PatternElement.Glob(_)          => TypeRepr.of[String]
-        case PatternElement.Split(_, _)      => TypeRepr.of[IndexedSeq[String]]
-        case PatternElement.SplitEmpty(_, _) => TypeRepr.of[IndexedSeq[String]]
-        case PatternElement.Format(format, _) =>
-          format match
-            case FormatPattern.AsInt    => TypeRepr.of[Int]
-            case FormatPattern.AsLong   => TypeRepr.of[Long]
-            case FormatPattern.AsDouble => TypeRepr.of[Double]
-            case FormatPattern.AsFloat  => TypeRepr.of[Float]
-    if args.size == 0 then TypeRepr.of[EmptyTuple]
-    else if args.size == 1 then args.head
-    else if args.size <= 22 then AppliedType(defn.TupleClass(args.size).typeRef, args.toList)
-    else
-      report.errorAndAbort(s"too many captures: ${args.size} (implementation restriction: max 22)")
-    end if
+
+    def typeOfPattern(element: PatternElement) = element match
+      case PatternElement.Glob(_)          => TypeRepr.of[String]
+      case PatternElement.Split(_, _)      => TypeRepr.of[IndexedSeq[String]]
+      case PatternElement.SplitEmpty(_, _) => TypeRepr.of[IndexedSeq[String]]
+      case PatternElement.Format(format, _) =>
+        format match
+          case FormatPattern.AsInt    => TypeRepr.of[Int]
+          case FormatPattern.AsLong   => TypeRepr.of[Long]
+          case FormatPattern.AsDouble => TypeRepr.of[Double]
+          case FormatPattern.AsFloat  => TypeRepr.of[Float]
+
+    pattern match
+      case Pattern.Literal(_)         => TypeRepr.of[EmptyTuple]
+      case Pattern.Single(_, pattern) => typeOfPattern(pattern)
+      case Pattern.Multiple(_, elements) =>
+        val args = elements.map(typeOfPattern)
+        if args.size <= 22 then AppliedType(defn.TupleClass(args.size).typeRef, args.toList)
+        else
+          report.errorAndAbort(
+            s"too many captures: ${args.size} (implementation restriction: max 22)"
+          )
+        end if
+    end match
   end refineResult
 
   private def wrapping[Base: Type](using Quotes): Int =
