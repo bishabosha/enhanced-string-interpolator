@@ -1,5 +1,5 @@
 // Main
-//> using scala "3.4.0-RC3"
+//> using scala "3.3.2"
 //> using options -source:future -Yexplicit-nulls
 //> using options -project enhanced-string-interpolator -siteroot ${.}
 
