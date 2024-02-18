@@ -28,7 +28,7 @@ class RegexSuite extends munit.FunSuite:
     """)
     val queryMsg =
       """unbalanced parentheses when parsing regex from format string: "...(((O|X))""""
-    assert(errors.exists(_.message.contains(queryMsg)))
+    assertEquals(true, clue(errors).exists(_.message.contains(queryMsg)))
 
   test("regex newline"):
     val in = """foo
